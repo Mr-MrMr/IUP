@@ -24,7 +24,7 @@ RF_classifier.fit(text_train, label_train)
 predict_train = RF_classifier.predict(text_train)
 print(f"Accuracy of Train dataset {accuracy_score(label_train, predict_train)}")
 predict_test = RF_classifier.predict(text_test)
+print(f"Accuracy of Test dataset {accuracy_score(label_test, predict_test)}")
 # Сохраняю классификатор
 with open("saved_classifier.pickle", 'wb') as f:
     pickle.dump(RF_classifier, f)
-print(f"Accuracy of Test dataset {accuracy_score(label_test, predict_test)}")
