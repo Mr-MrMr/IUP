@@ -31,6 +31,8 @@ def transform_text(input_string):
     return filtered_tokens
 
 
+# Считываю письмо с ввода пользователя
+input_string = input()
 # Инициализация лемматизатора
 lemmatizer = stem.WordNetLemmatizer()
 # Создаю множество стоп-слов и знаков препинания
@@ -39,23 +41,24 @@ stop_words.update(["n't", ",", ".", ":", ";", "\"", "'",
                    "!", "?", "(", ")", "{", "}", "[", "]", "-", "+", "*", "'m", "'s",
                    "'re", "'ll", "'d", "'ve", "@", "#", "№", "$", "^", "&",
                    ">", "<", "fw"])
-filtered_tokens = []
-# Считываю письмо с ввода пользователя
-input_string = input()
-# Обрабатываю письмо пользователя
-input_string = transform_text(input_string)
-input_string = " ".join(input_string)
-# Инициализирую векторизатор и векторизирую письмо пользователя
-hash_vectorizer = HashingVectorizer()
-hash_data = hash_vectorizer.fit_transform([input_string])
 # Загружаю классификатор
 with open("saved_classifier.pickle", 'rb') as f:
     RF_classifier = pickle.load(f)
-# Делаю предсказание
-predict_test = RF_classifier.predict_proba(hash_data)
-print(predict_test)
-# Если вероятность первого больше второго, то это не спам
-if predict_test[0][0] > predict_test[0][1]:
-    print("ham")
-else:
-    print("spam")
+# Инициализирую векторизатор
+hash_vectorizer = HashingVectorizer()
+while input_string != 'exit':
+    # Обрабатываю письмо пользователя
+    input_string = transform_text(input_string)
+    input_string = " ".join(input_string)
+    # Векторизирую письмо пользователя
+    hash_data = hash_vectorizer.fit_transform([input_string])
+    # Делаю предсказание
+    predict_test = RF_classifier.predict_proba(hash_data)
+    print(predict_test)
+    # Если вероятность первого больше второго, то это не спам
+    if predict_test[0][0] > predict_test[0][1]:
+        print("legal")
+    else:
+        print("spam")
+    # Считываю письмо с ввода пользователя снова
+    input_string = input()
