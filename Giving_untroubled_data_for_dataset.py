@@ -6,25 +6,34 @@ from nltk import word_tokenize, pos_tag, stem, corpus
 import re
 
 
-# Эта функция сейчас тестовая. Она переводит теги в другой формат,
+# Эта функция переводит теги в другой формат,
 # чтобы эти теги были удобны при лемматизации
-def penn_to_morphy(penntag):
-    # Конвертирует коды тегов в WordNet
-    morphy_tag = {'NN':'n', 'JJ':'a',
-                   'VB':'v', 'RB':'r'}
+def penn_to_WordNet(penn_treebank_tag):
+    # Конвертирую коды тегов в WordNet
+    WordNet_tag = {'N':'n', 'J':'a',
+                   'V':'v', 'R':'r'}
     try:
-        return morphy_tag[penntag[:2]]
+        return WordNet_tag[penn_treebank_tag[0]]
     except:
         return 'n' # По умолчанию существительное
 
 
 def transform_text(sample):
+    # Разбиваю по пробелам, чтобы убрать ссылки
+    splitted_sample = sample.split()
+    splitted_sample = " ".join([x for x in splitted_sample
+                                if re.search(r"(?:(?:https?|ftp|sftp|file|git|html|font|url):\/\/)?(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-z]{2,63}\b(?:[-a-zA-Z0-9@:%_\+.~#?&//=]*)", x) == None])
+
+    # Удаляю всё, что не является цифрой, английской буквой или пробелом
+    delete_all_non_alphabet_or_numeral = re.compile(r"[^a-zA-Z0-9 ]")
+    splitted_sample = delete_all_non_alphabet_or_numeral.sub(' ', splitted_sample)
+
     # Разбиваю пример на токены (разделение текста по словам, предложениям и т.д.)
-    tokens = word_tokenize(sample)
+    tokens = word_tokenize(splitted_sample)
 
     # Выдаю теги каждому токему (тег - то, какой частью речи является слово) и
     # лемматизирую каждый токен
-    lemmatized_tokens = [lemmatizer.lemmatize(token.lower(), pos=penn_to_morphy(tag))
+    lemmatized_tokens = [lemmatizer.lemmatize(token.lower(), pos=penn_to_WordNet(tag))
                          for token, tag in pos_tag(tokens)]
 
     # Фильтрую токены
@@ -39,11 +48,7 @@ my_dataframe = pd.DataFrame(columns=["Label", "Text"])
 lemmatizer = stem.WordNetLemmatizer()
 # Создаю множество стоп-слов и знаков препинания
 stop_words = set(corpus.stopwords.words('english'))
-stop_words.update(["n't", ",", ".", ":", ";", "\"", "'",
-                   "!", "?", "(", ")", "{", "}", "[", "]", "-", "+", "*", "%", "'m", "'s",
-                   "'re", "'ll", "'d", "'ve", "@", "#", "№", "$", "^", "&", "=", "~"
-                   ">", "<", "`", "fw"])
-
+stop_words.update(["n't", "'m", "'s", "'re", "'ll", "'d", "'ve", "№", "fw"])
 # Проверяю каждый файл (1 файл - 1 пример)
 for filename in os.listdir("2021\\01"):
     try:
@@ -65,18 +70,17 @@ for filename in os.listdir("2021\\01"):
             body = body.get_content()
             # Обрабатываю текст
             body = transform_text(body)
-            # Ссылки после обработки разделяются на несколько частей,
-            # поэтому нужно убрать эти части
+            # Если у токена есть знак "равно" или html/http/font и т.д.,
+            # то он не нужен, ведь он относится к частям html кода
             body = [x for x in body if
-                    re.search("[\s\S]*html|font|url|http|~|=|\\\[\s\S]*", x) == None]
+                    re.search("[\s\S]*html|font|url|http|=|~|\\\[\s\S]*", x) == None]
             body = [w for w in body if not w in stop_words]
             # Если текст имеется, то записываю в датафрейм
             if len(body) > 0:
-                my_dataframe.loc[len(my_dataframe)] = [1, body]
+                my_dataframe.loc[len(my_dataframe)] = [1, " ".join(body)]
     except UnicodeDecodeError:
         pass
 
-# Перевожу список слов в целую строку для каждого примера
-my_dataframe["Text"] = my_dataframe["Text"].agg(lambda x: " ".join(map(str, x)))
+
 # Добавляю примеры в csv файл, этот файл будет одним большим датасетом
 my_dataframe.to_csv("Final_dataset.csv", mode='a', index=False, header=False)

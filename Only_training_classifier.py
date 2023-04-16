@@ -6,7 +6,7 @@ import pandas as pd
 import pickle
 
 # Определяю файл с набором данных
-FILE = "Final_dataset.csv"
+FILE = "Final_dataset_4.csv"
 # Читаю csv файл и убираю отсутствующие значение (nan)
 data = pd.read_csv(FILE, delimiter=',', quotechar='"', encoding='utf-8', na_values=[])
 data['Text'] = data['Text'].fillna('')
@@ -26,5 +26,5 @@ print(f"Accuracy of Train dataset {accuracy_score(label_train, predict_train)}")
 predict_test = RF_classifier.predict(text_test)
 print(f"Accuracy of Test dataset {accuracy_score(label_test, predict_test)}")
 # Сохраняю классификатор
-with open("saved_classifier.pickle", 'wb') as f:
+with open("saved_classifier_4.pickle", 'wb') as f:
     pickle.dump(RF_classifier, f)
